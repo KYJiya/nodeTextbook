@@ -23,7 +23,7 @@ router.post('/room', async (req, res, next) => {
     try {
         const newRoom = await Room.create({
             title: req.body.title,
-            max: req, body.max,
+            max: req.body.max,
             owner: req.session.color,
             password: req.body.password,
         });
