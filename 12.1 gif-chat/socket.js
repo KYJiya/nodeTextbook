@@ -10,7 +10,7 @@ module.exports = (server, app, sessionMiddleware) => {
     const chat = io.of('/chat');
 
     io.use((socket, next) => {
-        cookieParser(process.env.COOKIE_SECRET)(socket.request, socket.request.res, next);
+        cookieParser(process.env.COOKIE_SECRET)(socket.request, sockeet.request.res, next);
         sessionMiddleware(socket.request, socket.request.res, next);
     });
 
@@ -24,7 +24,7 @@ module.exports = (server, app, sessionMiddleware) => {
     chat.on('connection', (socket) => {
         console.log('chat 네임스페이스에 접속');
         const req = socket.request;
-        const { headers: {  referer } } = req;
+        const { headers: { referer } } = req;
         const roomId = referer
             .split('/')[referer.split('/').length - 1]
             .replace(/\?.+/, '');
@@ -51,37 +51,38 @@ module.exports = (server, app, sessionMiddleware) => {
                         console.log('방 제거 요청 성공');
                     })
                     .catch((error) => {
-                        console.log(error);
+                        console.error(error);
                     });
-                } else {
-                    socket.to(roomId).emit('exit', {
-                        user: 'system',
-                        chat: `${req.session.color}님이 퇴장하셨습니다.`,
-                    });
-                }
+            } else {
+                socket.to(roomId).emit('exit', {
+                    user: 'system',
+                    chat: `${req.session.color}님이 퇴장하셨습니다.`,
+                });
+            }
         });
+    });
+
+    io.on('connection', (socket) => { // 웹 소켓 연결 시
+        const req = socket.request;
+        const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        console.log('새로운 클라이언트 접속!', ip, socket.id, req.ip);
+        socket.on('disconnect', () => { // 연결 종료 시
+            console.log('클라이언트 접속 해제', ip, socket.id);
+            clearInterval(socket.interval);
+        });
+        socket.on('error', (error) => { // 에러 시
+            console.error(error);
+        });
+        socket.on('reply', (data) => { // 클라이언트로부터 메시지 수신 시
+            console.log(data);
+        });
+        socket.interval = setInterval(() => { // 3초마다 클라이언트로 메시지 전송
+            socket.emit('news', 'Hello Socket.IO');
+        }, 3000);
     });
 };
 
-//     io.on('connection', (socket) => { // 웹 소켓 연결 시
-//         const req = socket.request;
-//         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-//         console.log('새로운 클라이언트 접속!', ip, socket.id, req.ip);
-//         socket.on('disconnect', () => { // 연결 종료 시
-//             console.log('클라이언트 접속 해제', ip, socket.id);
-//             clearInterval(socket.interval);
-//         });
-//         socket.on('error', (error) => { // 에러 시
-//             console.error(error);
-//         });
-//         socket.on('reply', (data) => { // 클라이언트로부터 메시지 수신 시
-//             console.log(data);
-//         });
-//         socket.interval = setInterval(() => { // 3초마다 클라이언트로 메시지 전송
-//             socket.emit('news', 'Hello Socket.IO');
-//         }, 3000);
-//     });
-// };
+
 
 // const WebSocket = require('ws');
 
