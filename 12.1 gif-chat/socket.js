@@ -10,7 +10,7 @@ module.exports = (server, app, sessionMiddleware) => {
     const chat = io.of('/chat');
 
     io.use((socket, next) => {
-        cookieParser(process.env.COOKIE_SECRET)(socket.request, sockeet.request.res, next);
+        cookieParser(process.env.COOKIE_SECRET)(socket.request, socket.request.res, next);
         sessionMiddleware(socket.request, socket.request.res, next);
     });
 
