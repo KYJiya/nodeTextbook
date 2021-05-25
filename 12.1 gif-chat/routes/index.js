@@ -48,12 +48,13 @@ router.get('/room/:id', async (req, res, next) => {
         }
         const { rooms } = io.of('/chat').adapter;
         if (rooms && rooms[req.params.id] && room.max <= rooms[req.params.id].length) {
-            return res.redirect('/?error=허용 인원을 초과했습니다.');
+            return res.redirect('/?error=허용 인원을 초과하였습니다.');
         }
+        const chats = await Chat.find({ room: room._id }).sort('createdAt');
         return res.render('chat', {
             room,
             title: room.title,
-            chats: [],
+            chats,
             user: req.session.color,
         });
     } catch (error) {
@@ -70,6 +71,21 @@ router.delete('/room/:id', async (req, res, next) => {
         setTimeout(() => {
             req.app.get('io').of('/room').emit('removeRoom', req.params.id);
         }, 2000);
+    } catch (error) {
+        console.error(error);
+        next(error);
+    }
+});
+
+router.post('/room/:id/chat', async (req, res, next) => {
+    try {
+        const chat = await Chat.create({
+            room: req.params.id,
+            user: req.session.color,
+            chat: req.body.chat,
+        });
+        req.app.get('io').of('/chat').to(req.params.id).emit('chat', chat);
+        res.send('ok');
     } catch (error) {
         console.error(error);
         next(error);
